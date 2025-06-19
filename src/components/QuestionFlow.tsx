@@ -42,7 +42,7 @@ const questions = [
   {
     id: 5,
     title: "Any specific details or which type of quality you want",
-    subtitle: "e.g., glowing , 8k / 4k quality, flowing hair, ethereal lighting",
+    subtitle: "e.g., glowing , 8k/4k quality, realistic image, ethereal lighting",
     placeholder: "Add any special touches to make it uniquely yours...",
     type: "textarea"
   }
