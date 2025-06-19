@@ -41,8 +41,8 @@ const questions = [
   },
   {
     id: 5,
-    title: "Any specific details or magical elements?",
-    subtitle: "e.g., glowing effects, sparkles, flowing hair, ethereal lighting",
+    title: "Any specific details or which type of quality you want",
+    subtitle: "e.g., glowing , 8k / 4k quality, flowing hair, ethereal lighting",
     placeholder: "Add any special touches to make it uniquely yours...",
     type: "textarea"
   }
