@@ -37,44 +37,32 @@ const Index = () => {
       <div className="relative z-10">
         {currentStep === 'welcome' && (
           <div className="min-h-screen flex items-center justify-center px-4">
-            <Card className="max-w-3xl mx-auto p-16 bg-white/80 backdrop-blur-xl border-0 shadow-2xl shadow-pink-200/50 text-center rounded-3xl">
-              <div className="mb-12">
+            <Card className="max-w-2xl mx-auto p-12 bg-white/90 backdrop-blur-xl border-0 shadow-2xl shadow-pink-200/50 text-center rounded-3xl">
+              <div className="mb-8">
                 <div className="flex justify-center mb-6">
                   <div className="relative">
-                    <Sparkles className="w-16 h-16 text-pink-500 animate-pulse" />
-                    <div className="absolute inset-0 w-16 h-16 bg-pink-500/20 rounded-full blur-xl"></div>
+                    <Sparkles className="w-12 h-12 text-pink-500" />
+                    <div className="absolute inset-0 w-12 h-12 bg-pink-500/20 rounded-full blur-xl"></div>
                   </div>
                 </div>
-                <h1 className="text-6xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-pink-500 bg-clip-text text-transparent mb-6">
+                <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-pink-500 bg-clip-text text-transparent mb-4">
                   Find Dreams
                 </h1>
-                <p className="text-2xl text-gray-700 mb-12 leading-relaxed font-light">
+                <p className="text-xl text-gray-700 mb-2 leading-relaxed">
                   Transform your imagination into stunning AI-generated images
                 </p>
-              </div>
-              
-              <div className="text-gray-600 mb-16 space-y-8">
-                <div className="flex items-center justify-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-pink-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg">1</div>
-                  <p className="text-xl">Describe your dream vision through 5 simple questions</p>
-                </div>
-                <div className="flex items-center justify-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg">2</div>
-                  <p className="text-xl">Watch AI bring your dreams to life</p>
-                </div>
-                <div className="flex items-center justify-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-400 rounded-full flex items-center justify-center text-white font-bold text-lg">3</div>
-                  <p className="text-xl">Download your personalized dream image</p>
-                </div>
+                <p className="text-lg text-gray-600 mb-8">
+                  Answer 5 simple questions and watch your dreams come to life
+                </p>
               </div>
 
               <Button 
                 onClick={handleStartJourney}
                 size="lg"
-                className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white px-12 py-6 text-xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 rounded-full"
+                className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white px-10 py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 rounded-full"
               >
                 Begin Your Dream Journey
-                <ArrowRight className="ml-3 w-6 h-6" />
+                <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Card>
           </div>
