@@ -20,7 +20,7 @@ const questions = [
   },
   {
     id: 2,
-    title: "What setting or environment do you envision?",
+    title: "What does the place you're thinking of look and feel like?",
     subtitle: "e.g., enchanted forest, futuristic city, peaceful beach, mystical realm",
     placeholder: "Where does your dream take place?",
     type: "textarea"
