@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Lock, User, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,7 +17,7 @@ const Auth = ({ onAuthComplete }: AuthProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, signup, loginWithGoogle, loginAnonymously } = useAuth();
+  const { login, signup, loginWithGoogle } = useAuth();
   const { toast } = useToast();
 
   const handleEmailAuth = async (isSignUp: boolean) => {
@@ -70,26 +70,6 @@ const Auth = ({ onAuthComplete }: AuthProps) => {
       toast({
         title: "Error",
         description: error.message || "Google authentication failed",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAnonymousAuth = async () => {
-    setLoading(true);
-    try {
-      await loginAnonymously();
-      toast({
-        title: "Success",
-        description: "Logged in anonymously!"
-      });
-      onAuthComplete();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Anonymous authentication failed",
         variant: "destructive"
       });
     } finally {
@@ -224,16 +204,6 @@ const Auth = ({ onAuthComplete }: AuthProps) => {
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
             Continue with Google
-          </Button>
-
-          <Button
-            onClick={handleAnonymousAuth}
-            disabled={loading}
-            variant="outline"
-            className="w-full border-2 border-purple-200 hover:bg-purple-50"
-          >
-            <User className="w-4 h-4 mr-2" />
-            Continue as Guest
           </Button>
         </div>
       </Card>

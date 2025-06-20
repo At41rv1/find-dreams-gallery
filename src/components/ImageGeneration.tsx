@@ -2,8 +2,11 @@
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Download, RefreshCw, Home, Sparkles, Loader2, Heart, Star } from 'lucide-react';
+import { Download, RefreshCw, Home, Sparkles, Loader2, Heart, Star, Share2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/contexts/AuthContext';
+import { saveGeneratedImage } from '@/services/firestoreService';
+import { uploadImageToStorage } from '@/services/storageService';
 
 interface ImageGenerationProps {
   answers: string[];
@@ -13,10 +16,12 @@ interface ImageGenerationProps {
 const ImageGeneration = ({ answers, onStartOver }: ImageGenerationProps) => {
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isSavingImage, setIsSavingImage] = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState('');
   const [generatedImage, setGeneratedImage] = useState('');
   const [error, setError] = useState('');
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     generateImagePrompt();
@@ -36,7 +41,7 @@ const ImageGeneration = ({ answers, onStartOver }: ImageGenerationProps) => {
           'Authorization': `Bearer ${import.meta.env.VITE_SAMURAI_API_CHAT_KEY}`
         },
         body: JSON.stringify({
-          model: "DeepInfra/google/gemma-3-4b-it",
+          model: "Toolbaz/gemini-2.5-flash",
           messages: [
             {
               role: "system",
@@ -113,11 +118,17 @@ const ImageGeneration = ({ answers, onStartOver }: ImageGenerationProps) => {
         throw new Error('Invalid response format from image API');
       }
 
-      setGeneratedImage(data.data[0].url);
+      const imageUrl = data.data[0].url;
+      setGeneratedImage(imageUrl);
+      
+      // Auto-save to Firebase if user is logged in
+      if (user) {
+        await saveImageToFirebase(imageUrl, prompt);
+      }
       
       toast({
         title: "Dream Generated Successfully!",
-        description: "Your dream image has been created successfully!",
+        description: user ? "Your dream has been saved to the community!" : "Your dream is ready! Sign in to save it to the community.",
       });
       
     } catch (err) {
@@ -128,16 +139,47 @@ const ImageGeneration = ({ answers, onStartOver }: ImageGenerationProps) => {
     }
   };
 
+  const saveImageToFirebase = async (imageUrl: string, prompt: string) => {
+    if (!user) return;
+    
+    setIsSavingImage(true);
+    try {
+      // Upload image to Firebase Storage
+      const storageUrl = await uploadImageToStorage(imageUrl, user.uid);
+      
+      // Save metadata to Firestore
+      await saveGeneratedImage(storageUrl, prompt, user.uid, user.email || undefined);
+      
+      console.log('Image saved to Firebase successfully');
+    } catch (error) {
+      console.error('Error saving image to Firebase:', error);
+      toast({
+        title: "Save Error",
+        description: "Failed to save image to community",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSavingImage(false);
+    }
+  };
+
   const downloadImage = async () => {
     if (!generatedImage) return;
     
     try {
-      const response = await fetch(generatedImage);
+      const response = await fetch(generatedImage, {
+        mode: 'cors'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch image');
+      }
+      
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `find-dreams-${Date.now()}.png`;
+      a.download = `dream-${Date.now()}.png`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -149,11 +191,21 @@ const ImageGeneration = ({ answers, onStartOver }: ImageGenerationProps) => {
       });
     } catch (err) {
       console.error('Download error:', err);
-      toast({
-        title: "Download Failed",
-        description: "Please try downloading again.",
-        variant: "destructive"
-      });
+      
+      // Fallback: open in new tab
+      try {
+        window.open(generatedImage, '_blank');
+        toast({
+          title: "Download Alternative",
+          description: "Image opened in new tab. Right-click to save.",
+        });
+      } catch (fallbackErr) {
+        toast({
+          title: "Download Failed",
+          description: "Unable to download. Please try again or right-click the image to save.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -190,14 +242,16 @@ const ImageGeneration = ({ answers, onStartOver }: ImageGenerationProps) => {
             </div>
           </div>
 
-          {(isGeneratingPrompt || isGeneratingImage) && (
+          {(isGeneratingPrompt || isGeneratingImage || isSavingImage) && (
             <div className="text-center mb-10">
               <div className="relative inline-block mb-6">
                 <Loader2 className="w-16 h-16 animate-spin text-pink-500" />
                 <div className="absolute inset-0 w-16 h-16 bg-pink-500/20 rounded-full blur-xl"></div>
               </div>
               <p className="text-gray-700 text-xl font-medium mb-6">
-                {isGeneratingPrompt ? 'Crafting your dream prompt...' : 'Bringing your dream to life...'}
+                {isGeneratingPrompt ? 'Crafting your dream prompt...' : 
+                 isGeneratingImage ? 'Bringing your dream to life...' :
+                 'Saving to community...'}
               </p>
               <div className="w-full max-w-md mx-auto bg-gray-200 rounded-full h-3 overflow-hidden">
                 <div className="bg-gradient-to-r from-pink-500 to-purple-600 h-3 rounded-full animate-pulse w-3/4 transition-all duration-1000"></div>
@@ -226,9 +280,19 @@ const ImageGeneration = ({ answers, onStartOver }: ImageGenerationProps) => {
                     src={generatedImage} 
                     alt="Generated Dream" 
                     className="w-full max-w-3xl mx-auto rounded-2xl shadow-2xl transition-transform duration-500 group-hover:scale-105"
+                    crossOrigin="anonymous"
                   />
                 </div>
               </div>
+              
+              {!user && (
+                <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl text-center">
+                  <p className="text-purple-700 font-medium">
+                    <LogIn className="w-5 h-5 inline mr-2" />
+                    Sign in to save your dreams to the community and view them later!
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -251,7 +315,7 @@ const ImageGeneration = ({ answers, onStartOver }: ImageGenerationProps) => {
             
             <Button
               onClick={retryGeneration}
-              disabled={isGeneratingPrompt || isGeneratingImage}
+              disabled={isGeneratingPrompt || isGeneratingImage || isSavingImage}
               className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-8 py-4 text-lg rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
             >
               <RefreshCw className="mr-2 w-5 h-5" />

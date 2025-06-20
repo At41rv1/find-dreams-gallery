@@ -7,8 +7,7 @@ import {
   signOut,
   onAuthStateChanged,
   GoogleAuthProvider,
-  signInWithPopup,
-  signInAnonymously
+  signInWithPopup
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
@@ -18,7 +17,6 @@ interface AuthContextType {
   signup: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   loginWithGoogle: () => Promise<void>;
-  loginAnonymously: () => Promise<void>;
   loading: boolean;
 }
 
@@ -62,17 +60,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await signInWithPopup(auth, provider);
   };
 
-  const loginAnonymously = async () => {
-    await signInAnonymously(auth);
-  };
-
   const value = {
     user,
     login,
     signup,
     logout,
     loginWithGoogle,
-    loginAnonymously,
     loading
   };
 
