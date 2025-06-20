@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -138,9 +137,7 @@ const Index = () => {
         )}
 
         {currentStep === 'auth' && (
-          <div className="min-h-screen flex items-center justify-center px-4 py-8">
-            <Auth onAuthComplete={handleAuthComplete} />
-          </div>
+          <Auth onAuthComplete={handleAuthComplete} />
         )}
 
         {currentStep === 'questions' && (
@@ -148,7 +145,7 @@ const Index = () => {
         )}
 
         {currentStep === 'generating' && (
-          <ImageGeneration answers={answers} onStartOver={handleStartOver} />
+          <ImageGeneration onStartOver={handleStartOver} />
         )}
       </div>
     </div>
