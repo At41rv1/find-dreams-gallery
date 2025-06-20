@@ -36,7 +36,7 @@ const ImageGeneration = ({ answers, onStartOver }: ImageGenerationProps) => {
           'Authorization': `Bearer ${import.meta.env.VITE_SAMURAI_API_CHAT_KEY}`
         },
         body: JSON.stringify({
-          model: "Toolbaz/gemini-2.5-flash",
+          model: "DeepInfra/google/gemma-3-4b-it",
           messages: [
             {
               role: "system",
