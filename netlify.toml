@@ -1,0 +1,64 @@
+
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[context.production.environment]
+  # Firebase Configuration
+  VITE_FIREBASE_API_KEY = "AIzaSyBNPaTZO92kwr9s33s1MF5T_eGV7_r3KNs"
+  VITE_FIREBASE_AUTH_DOMAIN = "at41rv1.firebaseapp.com"
+  VITE_FIREBASE_PROJECT_ID = "at41rv1"
+  VITE_FIREBASE_STORAGE_BUCKET = "at41rv1.appspot.com"
+  VITE_FIREBASE_MESSAGING_SENDER_ID = "176557128250"
+  VITE_FIREBASE_APP_ID = "1:176557128250:web:9037c0f48a2a0b1e169303"
+
+  # AI Image Generation APIs
+  VITE_SAMURAI_API_BASE_URL = "https://samuraiapi.in/v1"
+  
+  # Application Configuration
+  VITE_APP_NAME = "Find Dreams"
+  VITE_APP_VERSION = "1.0.0"
+  VITE_APP_ENVIRONMENT = "production"
+  
+  # Feature Flags
+  VITE_ENABLE_COMMUNITY_FEATURES = "true"
+  VITE_ENABLE_PREMIUM_FEATURES = "false"
+  VITE_ENABLE_ANALYTICS = "true"
+  VITE_ENABLE_ERROR_TRACKING = "true"
+  
+  # Rate Limiting
+  VITE_MAX_IMAGES_PER_DAY = "10"
+  VITE_MAX_IMAGES_PER_HOUR = "3"
+
+# Headers for better security and performance
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://samuraiapi.in https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com wss://firestore.googleapis.com;"
+
+[[headers]]
+  for = "/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

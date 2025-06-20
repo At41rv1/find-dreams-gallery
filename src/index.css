@@ -88,7 +88,7 @@
   }
 }
 
-/* Enhanced smooth animations */
+/* Enhanced smooth animations with mobile optimization */
 @keyframes float {
   0%, 100% {
     transform: translateY(0px) rotate(0deg);
@@ -213,6 +213,27 @@
   }
 }
 
+/* Mobile-optimized animations - reduce motion for better performance */
+@media (max-width: 768px) {
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+  
+  @keyframes float-slow {
+    0%, 100% {
+      transform: translateY(0px) scale(1);
+    }
+    50% {
+      transform: translateY(-10px) scale(1.02);
+    }
+  }
+}
+
 /* Animation classes */
 .animate-float {
   animation: float 8s ease-in-out infinite;
@@ -279,6 +300,18 @@
   animation-delay: 1s;
 }
 
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-3000 {
+  animation-delay: 3s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
 /* Enhanced shadow utilities */
 .shadow-3xl {
   box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.25);
@@ -291,6 +324,53 @@
 
 .bg-clean-light {
   background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+}
+
+/* Mobile-first responsive utilities */
+.text-responsive {
+  @apply text-sm sm:text-base md:text-lg lg:text-xl;
+}
+
+.heading-responsive {
+  @apply text-2xl sm:text-3xl md:text-4xl lg:text-5xl;
+}
+
+.padding-responsive {
+  @apply p-4 sm:p-6 md:p-8 lg:p-10;
+}
+
+.margin-responsive {
+  @apply m-4 sm:m-6 md:m-8 lg:m-10;
+}
+
+/* Line clamp utilities for text truncation */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Touch-friendly interactive elements */
+@media (max-width: 768px) {
+  button, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
 /* Smooth transitions for all interactive elements */
@@ -308,4 +388,44 @@ button:hover {
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Better focus styles for accessibility */
+*:focus-visible {
+  outline: 2px solid rgba(219, 39, 119, 0.5);
+  outline-offset: 2px;
+}
+
+/* Improved backdrop blur support */
+.backdrop-blur-xl {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.backdrop-blur-2xl {
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  .bg-white\/90 {
+    background-color: rgba(255, 255, 255, 0.9);
+  }
+  
+  .bg-white\/95 {
+    background-color: rgba(255, 255, 255, 0.95);
+  }
 }
