@@ -33,10 +33,10 @@ const ImageGeneration = ({ answers, onStartOver }: ImageGenerationProps) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer 8973891784627370182992973'
+          'Authorization': `Bearer ${import.meta.env.VITE_SAMURAI_API_CHAT_KEY}`
         },
         body: JSON.stringify({
-          model: "HeckAI/google/gemini-2.5-flash-preview",
+          model: "Toolbaz/gemini-2.5-flash",
           messages: [
             {
               role: "system",
@@ -53,10 +53,19 @@ const ImageGeneration = ({ answers, onStartOver }: ImageGenerationProps) => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate prompt');
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error.message || 'Failed to generate prompt');
+      }
+      
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        throw new Error('Invalid response format from API');
+      }
+
       const prompt = data.choices[0].message.content.trim();
       setGeneratedPrompt(prompt);
       
@@ -64,8 +73,8 @@ const ImageGeneration = ({ answers, onStartOver }: ImageGenerationProps) => {
       generateImage(prompt);
       
     } catch (err) {
-      setError('Failed to generate prompt. Please try again.');
       console.error('Prompt generation error:', err);
+      setError(`Failed to generate prompt: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsGeneratingPrompt(false);
     }
@@ -80,7 +89,7 @@ const ImageGeneration = ({ answers, onStartOver }: ImageGenerationProps) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer 938888749273972'
+          'Authorization': `Bearer ${import.meta.env.VITE_SAMURAI_API_IMAGE_KEY}`
         },
         body: JSON.stringify({
           model: "TogetherImage/black-forest-labs/FLUX.1-kontext-max",
@@ -91,10 +100,19 @@ const ImageGeneration = ({ answers, onStartOver }: ImageGenerationProps) => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate image');
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error.message || 'Failed to generate image');
+      }
+      
+      if (!data.data || !data.data[0] || !data.data[0].url) {
+        throw new Error('Invalid response format from image API');
+      }
+
       setGeneratedImage(data.data[0].url);
       
       toast({
@@ -103,8 +121,8 @@ const ImageGeneration = ({ answers, onStartOver }: ImageGenerationProps) => {
       });
       
     } catch (err) {
-      setError('Failed to generate image. Please try again.');
       console.error('Image generation error:', err);
+      setError(`Failed to generate image: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsGeneratingImage(false);
     }
@@ -130,6 +148,7 @@ const ImageGeneration = ({ answers, onStartOver }: ImageGenerationProps) => {
         description: "Your dream image has been saved to your device.",
       });
     } catch (err) {
+      console.error('Download error:', err);
       toast({
         title: "Download Failed",
         description: "Please try downloading again.",
