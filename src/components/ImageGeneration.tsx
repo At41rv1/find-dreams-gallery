@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -39,29 +40,57 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({
   const enhancePrompt = async (originalPrompt: string): Promise<string> => {
     if (!originalPrompt.trim()) return originalPrompt;
 
+    const apiBaseUrl = import.meta.env.VITE_SAMURAI_API_BASE_URL;
+    const chatApiKey = import.meta.env.VITE_SAMURAI_API_CHAT_KEY;
+
+    if (!apiBaseUrl || !chatApiKey) {
+      console.warn('Missing environment variables for prompt enhancement');
+      toast({
+        title: "Configuration Error",
+        description: "API configuration is missing. Using original prompt.",
+        variant: "destructive"
+      });
+      return originalPrompt;
+    }
+
     setIsEnhancing(true);
     try {
       console.log('Enhancing prompt:', originalPrompt);
+      console.log('Using API Base URL:', apiBaseUrl);
       
-      const response = await fetch(`${import.meta.env.VITE_SAMURAI_API_BASE_URL}/chat/completions`, {
+      const response = await fetch(`${apiBaseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-KEY': import.meta.env.VITE_SAMURAI_API_CHAT_KEY || '',
+          'X-API-KEY': chatApiKey,
         },
         body: JSON.stringify({
           model: "Toolbaz/gemini-2.0-flash",
           messages: [
             {
               role: "system",
-              content: "You are a professional AI art prompt enhancer. Take the user's simple prompt and enhance it with artistic details, lighting, composition, and style elements to create stunning images. Keep the core subject but make it more detailed and visually appealing. Return only the enhanced prompt, nothing else."
+              content: `You are a professional AI art prompt enhancer. Your job is to take simple prompts and transform them into extremely detailed, vivid, and artistic descriptions for AI image generation. 
+
+Create a comprehensive 50-line prompt that includes:
+- Detailed description of the main subject with specific features, expressions, and characteristics
+- Rich environmental details including lighting, atmosphere, and mood
+- Artistic style references (photography styles, art movements, camera techniques)
+- Color palette specifications with exact color names and tones
+- Composition details (angles, framing, perspective)
+- Quality and technical specifications (resolution, clarity, artistic quality)
+- Texture and material descriptions
+- Background elements and scenery details
+- Weather conditions or atmospheric effects if relevant
+- Professional photography or artistic rendering specifications
+
+Make each line descriptive and specific. Focus on creating a prompt that will generate stunning, professional-quality images. Return only the enhanced prompt, nothing else.`
             },
             {
               role: "user",
-              content: `Enhance this prompt for AI image generation: "${originalPrompt}"`
+              content: `Create an extremely detailed 50-line AI image generation prompt based on: "${originalPrompt}"`
             }
           ],
-          max_tokens: 200,
+          max_tokens: 800,
           temperature: 0.7
         }),
       });
@@ -71,7 +100,7 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Prompt enhancement error response:', errorText);
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
@@ -103,6 +132,18 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({
       return;
     }
 
+    const apiBaseUrl = import.meta.env.VITE_SAMURAI_API_BASE_URL;
+    const imageApiKey = import.meta.env.VITE_SAMURAI_API_IMAGE_KEY;
+
+    if (!apiBaseUrl || !imageApiKey) {
+      toast({
+        title: "Configuration Error",
+        description: "API configuration is missing. Please check environment variables.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsGenerating(true);
     setImageUrl(null);
     
@@ -111,13 +152,14 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({
       const promptToUse = await enhancePrompt(prompt);
       
       console.log('Generating image with prompt:', promptToUse);
+      console.log('Using API Base URL:', apiBaseUrl);
       
       // Then generate the image
-      const response = await fetch(`${import.meta.env.VITE_SAMURAI_API_BASE_URL}/images/generations`, {
+      const response = await fetch(`${apiBaseUrl}/images/generations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-KEY': import.meta.env.VITE_SAMURAI_API_IMAGE_KEY || '',
+          'X-API-KEY': imageApiKey,
         },
         body: JSON.stringify({ 
           prompt: promptToUse,
@@ -327,7 +369,7 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({
               <Sparkles className="w-4 h-4 mr-1" />
               Enhanced Prompt
             </Label>
-            <div className="mt-1 p-3 bg-purple-50 border border-purple-200 rounded-lg text-sm text-purple-800">
+            <div className="mt-1 p-3 bg-purple-50 border border-purple-200 rounded-lg text-sm text-purple-800 max-h-40 overflow-y-auto">
               {enhancedPrompt}
             </div>
           </div>
@@ -423,6 +465,132 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({
       </Card>
     </div>
   );
+
+  async function saveImage() {
+    if (!imageUrl) {
+      toast({
+        title: "Error",
+        description: "No image to save.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to save images.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Upload image to Firebase Storage
+      const storageUrl = await uploadImageToStorage(imageUrl, user.uid);
+      
+      // Save image URL and prompt to Firestore
+      await saveGeneratedImage(storageUrl, enhancedPrompt || prompt, user.uid, user.email || 'anonymous');
+
+      toast({
+        title: "Success",
+        description: "Image saved successfully!",
+      });
+    } catch (error: any) {
+      console.error('Error saving image:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save image. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  function shareImage() {
+    if (!imageUrl) {
+      toast({
+        title: "Error",
+        description: "No image to share.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Use the navigator API to share the image URL
+    if (navigator.share) {
+      navigator.share({
+        title: 'Dream Image',
+        text: 'Check out this dream image I generated!',
+        url: imageUrl,
+      }).then(() => {
+        toast({
+          title: "Success",
+          description: "Image shared successfully!",
+        });
+      }).catch((error) => {
+        console.error('Error sharing image:', error);
+        toast({
+          title: "Error",
+          description: "Failed to share image.",
+          variant: "destructive"
+        });
+      });
+    } else {
+      // Fallback for browsers that don't support the share API
+      navigator.clipboard.writeText(imageUrl).then(() => {
+        toast({
+          title: "Copied!",
+          description: "Image URL copied to clipboard.",
+        });
+      }).catch((error) => {
+        console.error('Error copying to clipboard:', error);
+        toast({
+          title: "Error",
+          description: "Failed to copy image URL.",
+          variant: "destructive"
+        });
+      });
+    }
+  }
+
+  async function downloadImage() {
+    if (!imageUrl) {
+      toast({
+        title: "Error",
+        description: "No image to download.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `dream_image_${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Success",
+        description: "Image downloaded successfully!",
+      });
+    } catch (error) {
+      console.error('Error downloading image:', error);
+      toast({
+        title: "Error",
+        description: "Failed to download image.",
+        variant: "destructive"
+      });
+    }
+  }
 };
 
 export default ImageGeneration;
