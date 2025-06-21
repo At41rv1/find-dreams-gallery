@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
   const [currentStep, setCurrentStep] = useState<'welcome' | 'questions' | 'generating' | 'auth'>('welcome');
-  const [answers, setAnswers] = useState<string[]>([]);
+  const [automatedPrompt, setAutomatedPrompt] = useState<string>('');
   const { user } = useAuth();
 
   const handleStartJourney = () => {
@@ -18,13 +19,14 @@ const Index = () => {
   };
 
   const handleQuestionsComplete = (userAnswers: string[]) => {
-    setAnswers(userAnswers);
+    // The QuestionFlow now returns the automated prompt
+    setAutomatedPrompt(userAnswers[0]);
     setCurrentStep('generating');
   };
 
   const handleStartOver = () => {
     setCurrentStep('welcome');
-    setAnswers([]);
+    setAutomatedPrompt('');
   };
 
   const handleShowAuth = () => {
@@ -95,7 +97,7 @@ const Index = () => {
                     Transform your imagination into stunning AI-generated images
                   </p>
                   <p className="text-base sm:text-lg text-gray-600 animate-fade-in-up animation-delay-200 px-4">
-                    Answer 5 simple questions and watch your dreams come to life
+                    Answer 5 simple questions and watch as we automatically generate your dream
                   </p>
                 </div>
               </div>
@@ -128,8 +130,8 @@ const Index = () => {
                 </div>
                 <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-4 border border-pink-100">
                   <LogIn className="w-8 h-8 text-pink-500 mx-auto mb-2" />
-                  <h3 className="font-semibold text-gray-800 text-sm">Community</h3>
-                  <p className="text-xs text-gray-600 mt-1">Share with others</p>
+                  <h3 className="font-semibold text-gray-800 text-sm">Auto Generate</h3>
+                  <p className="text-xs text-gray-600 mt-1">Instant dream creation</p>
                 </div>
               </div>
             </Card>
@@ -145,7 +147,10 @@ const Index = () => {
         )}
 
         {currentStep === 'generating' && (
-          <ImageGeneration onStartOver={handleStartOver} />
+          <ImageGeneration 
+            onStartOver={handleStartOver} 
+            initialPrompt={automatedPrompt}
+          />
         )}
       </div>
     </div>

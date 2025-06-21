@@ -1,10 +1,9 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Loader2, Download, Share2, ArrowLeft, LogIn } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from "@/hooks/use-toast";
@@ -14,17 +13,38 @@ import { uploadImageToStorage } from '@/services/storageService';
 interface ImageGenerationProps {
   onImageGenerated?: (imageUrl: string) => void;
   onStartOver?: () => void;
+  initialPrompt?: string;
 }
 
-const ImageGeneration: React.FC<ImageGenerationProps> = ({ onImageGenerated, onStartOver }) => {
-  const [prompt, setPrompt] = useState('');
+const ImageGeneration: React.FC<ImageGenerationProps> = ({ 
+  onImageGenerated, 
+  onStartOver, 
+  initialPrompt 
+}) => {
+  const [prompt, setPrompt] = useState(initialPrompt || '');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
+  // Auto-generate image when component mounts with initial prompt
+  useEffect(() => {
+    if (initialPrompt && initialPrompt.trim()) {
+      generateImage();
+    }
+  }, [initialPrompt]);
+
   const generateImage = async () => {
+    if (!prompt.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a prompt to generate an image.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsGenerating(true);
     setImageUrl(null);
     try {
@@ -50,6 +70,10 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ onImageGenerated, onS
         if (onImageGenerated) {
           onImageGenerated(data.image_url);
         }
+        toast({
+          title: "Success!",
+          description: "Your dream image has been generated!",
+        });
       } else {
         throw new Error('Failed to generate image');
       }
@@ -206,7 +230,7 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ onImageGenerated, onS
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-              Generate Your Dream
+              {initialPrompt ? 'Your Dream is Being Created...' : 'Generate Your Dream'}
             </h2>
           </div>
         )}
@@ -220,21 +244,34 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ onImageGenerated, onS
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           className="mt-2 bg-white/80 border-2 border-pink-100 focus:border-pink-300 rounded-xl"
-        />
-        <Button
-          onClick={generateImage}
           disabled={isGenerating}
-          className="mt-4 w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            'Generate Dream Image'
-          )}
-        </Button>
+        />
+        
+        {!initialPrompt && (
+          <Button
+            onClick={generateImage}
+            disabled={isGenerating}
+            className="mt-4 w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              'Generate Dream Image'
+            )}
+          </Button>
+        )}
+
+        {isGenerating && (
+          <div className="mt-6 text-center">
+            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-pink-100 to-purple-100 rounded-full">
+              <Loader2 className="mr-2 h-5 w-5 animate-spin text-pink-600" />
+              <span className="text-pink-700 font-medium">Creating your dream image...</span>
+            </div>
+          </div>
+        )}
 
         {imageUrl && (
           <div className="mt-6">
@@ -270,6 +307,17 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ onImageGenerated, onS
                 Download
               </Button>
             </div>
+            
+            {!user && (
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center">
+                  <LogIn className="w-5 h-5 text-yellow-600 mr-2" />
+                  <span className="text-yellow-800 text-sm">
+                    Sign in to save your images permanently!
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </Card>

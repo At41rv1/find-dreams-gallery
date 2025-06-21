@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
   User,
@@ -73,13 +72,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithGoogle = async () => {
     try {
       // Use the pre-configured provider for faster sign-in
-      const result = await signInWithPopup(auth, googleProvider);
-      
-      // The signed-in user info
-      const user = result.user;
-      console.log('Google sign-in successful:', user.displayName);
-      
-      return result;
+      await signInWithPopup(auth, googleProvider);
+      console.log('Google sign-in successful');
     } catch (error: any) {
       console.error('Google sign-in error:', error);
       

@@ -42,7 +42,7 @@ const questions = [
   {
     id: 5,
     title: "Any specific details or which type of quality you want",
-    subtitle: "e.g., glowing , 8k/4k quality, realistic image, ethereal lighting",
+    subtitle: "e.g., glowing, 8k/4k quality, realistic image, ethereal lighting",
     placeholder: "Add any special touches to make it uniquely yours...",
     type: "textarea"
   }
@@ -62,8 +62,38 @@ const QuestionFlow = ({ onComplete }: QuestionFlowProps) => {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     } else {
-      onComplete(answers);
+      // Automatically generate prompt and complete
+      const automatedPrompt = generateAutomatedPrompt(answers);
+      onComplete([automatedPrompt]);
     }
+  };
+
+  const generateAutomatedPrompt = (userAnswers: string[]): string => {
+    const [subject, place, mood, colors, details] = userAnswers;
+    
+    // Create a comprehensive prompt combining all answers
+    let prompt = `${subject}`;
+    
+    if (place.trim()) {
+      prompt += ` in ${place}`;
+    }
+    
+    if (mood.trim()) {
+      prompt += `, ${mood} atmosphere`;
+    }
+    
+    if (colors.trim()) {
+      prompt += `, ${colors} color palette`;
+    }
+    
+    if (details.trim()) {
+      prompt += `, ${details}`;
+    }
+    
+    // Add quality enhancers
+    prompt += ', highly detailed, professional photography, 8k resolution, masterpiece';
+    
+    return prompt;
   };
 
   const handlePrevious = () => {
