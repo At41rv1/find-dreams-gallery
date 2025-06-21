@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Loader2, Download, Share2, ArrowLeft, LogIn } from 'lucide-react';
+import { Loader2, Download, Share2, ArrowLeft, LogIn, Sparkles } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from "@/hooks/use-toast";
 import { saveGeneratedImage } from '@/services/firestoreService';
@@ -22,8 +21,10 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({
   initialPrompt 
 }) => {
   const [prompt, setPrompt] = useState(initialPrompt || '');
+  const [enhancedPrompt, setEnhancedPrompt] = useState<string>('');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isEnhancing, setIsEnhancing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -34,6 +35,54 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({
       generateImage();
     }
   }, [initialPrompt]);
+
+  const enhancePrompt = async (originalPrompt: string): Promise<string> => {
+    if (!originalPrompt.trim()) return originalPrompt;
+
+    setIsEnhancing(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SAMURAI_API_BASE_URL}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': import.meta.env.VITE_SAMURAI_API_CHAT_KEY || '',
+        },
+        body: JSON.stringify({
+          model: "Toolbaz/gemini-2.0-flash",
+          messages: [
+            {
+              role: "system",
+              content: "You are a professional AI art prompt enhancer. Take the user's simple prompt and enhance it with artistic details, lighting, composition, and style elements to create stunning images. Keep the core subject but make it more detailed and visually appealing. Return only the enhanced prompt, nothing else."
+            },
+            {
+              role: "user",
+              content: `Enhance this prompt for AI image generation: "${originalPrompt}"`
+            }
+          ],
+          max_tokens: 200,
+          temperature: 0.7
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const enhanced = data.choices?.[0]?.message?.content?.trim() || originalPrompt;
+      setEnhancedPrompt(enhanced);
+      return enhanced;
+    } catch (error: any) {
+      console.error('Prompt enhancement error:', error);
+      toast({
+        title: "Note",
+        description: "Using original prompt (enhancement unavailable)",
+      });
+      return originalPrompt;
+    } finally {
+      setIsEnhancing(false);
+    }
+  };
 
   const generateImage = async () => {
     if (!prompt.trim()) {
@@ -47,16 +96,23 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({
 
     setIsGenerating(true);
     setImageUrl(null);
+    
     try {
-      const response = await fetch(`${import.meta.env.VITE_SAMURAI_API_BASE_URL}/ai/image`, {
+      // First enhance the prompt
+      const promptToUse = await enhancePrompt(prompt);
+      
+      // Then generate the image
+      const response = await fetch(`${import.meta.env.VITE_SAMURAI_API_BASE_URL}/images/generations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-API-KEY': import.meta.env.VITE_SAMURAI_API_IMAGE_KEY || '',
         },
         body: JSON.stringify({ 
-          prompt,
-          model: "Toolbaz/gemini-2.5-flash"
+          prompt: promptToUse,
+          model: "TogetherImage/black-forest-labs/FLUX.1-kontext-max",
+          n: 1,
+          size: "1024x1024"
         }),
       });
 
@@ -65,17 +121,17 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({
       }
 
       const data = await response.json();
-      if (data && data.image_url) {
-        setImageUrl(data.image_url);
+      if (data && data.data && data.data[0] && data.data[0].url) {
+        setImageUrl(data.data[0].url);
         if (onImageGenerated) {
-          onImageGenerated(data.image_url);
+          onImageGenerated(data.data[0].url);
         }
         toast({
           title: "Success!",
           description: "Your dream image has been generated!",
         });
       } else {
-        throw new Error('Failed to generate image');
+        throw new Error('Invalid response format from image generation API');
       }
     } catch (error: any) {
       console.error('Image generation error:', error);
@@ -115,7 +171,7 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({
       const storageUrl = await uploadImageToStorage(imageUrl, user.uid);
       
       // Save image URL and prompt to Firestore
-      await saveGeneratedImage(storageUrl, prompt, user.uid, user.email || 'anonymous');
+      await saveGeneratedImage(storageUrl, enhancedPrompt || prompt, user.uid, user.email || 'anonymous');
 
       toast({
         title: "Success",
@@ -246,14 +302,31 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({
           className="mt-2 bg-white/80 border-2 border-pink-100 focus:border-pink-300 rounded-xl"
           disabled={isGenerating}
         />
+
+        {enhancedPrompt && (
+          <div className="mt-4">
+            <Label className="text-sm font-medium text-purple-700 flex items-center">
+              <Sparkles className="w-4 h-4 mr-1" />
+              Enhanced Prompt
+            </Label>
+            <div className="mt-1 p-3 bg-purple-50 border border-purple-200 rounded-lg text-sm text-purple-800">
+              {enhancedPrompt}
+            </div>
+          </div>
+        )}
         
         {!initialPrompt && (
           <Button
             onClick={generateImage}
-            disabled={isGenerating}
+            disabled={isGenerating || isEnhancing}
             className="mt-4 w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white"
           >
-            {isGenerating ? (
+            {isEnhancing ? (
+              <>
+                <Sparkles className="mr-2 h-4 w-4 animate-spin" />
+                Enhancing Prompt...
+              </>
+            ) : isGenerating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Generating...
@@ -264,11 +337,20 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({
           </Button>
         )}
 
-        {isGenerating && (
+        {(isEnhancing || isGenerating) && (
           <div className="mt-6 text-center">
             <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-pink-100 to-purple-100 rounded-full">
-              <Loader2 className="mr-2 h-5 w-5 animate-spin text-pink-600" />
-              <span className="text-pink-700 font-medium">Creating your dream image...</span>
+              {isEnhancing ? (
+                <>
+                  <Sparkles className="mr-2 h-5 w-5 animate-spin text-purple-600" />
+                  <span className="text-purple-700 font-medium">Enhancing your prompt...</span>
+                </>
+              ) : (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin text-pink-600" />
+                  <span className="text-pink-700 font-medium">Creating your dream image...</span>
+                </>
+              )}
             </div>
           </div>
         )}
