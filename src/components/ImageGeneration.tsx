@@ -41,6 +41,8 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({
 
     setIsEnhancing(true);
     try {
+      console.log('Enhancing prompt:', originalPrompt);
+      
       const response = await fetch(`${import.meta.env.VITE_SAMURAI_API_BASE_URL}/chat/completions`, {
         method: 'POST',
         headers: {
@@ -64,13 +66,20 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({
         }),
       });
 
+      console.log('Prompt enhancement response status:', response.status);
+      
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Prompt enhancement error response:', errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('Prompt enhancement response data:', data);
+      
       const enhanced = data.choices?.[0]?.message?.content?.trim() || originalPrompt;
       setEnhancedPrompt(enhanced);
+      console.log('Enhanced prompt:', enhanced);
       return enhanced;
     } catch (error: any) {
       console.error('Prompt enhancement error:', error);
@@ -101,6 +110,8 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({
       // First enhance the prompt
       const promptToUse = await enhancePrompt(prompt);
       
+      console.log('Generating image with prompt:', promptToUse);
+      
       // Then generate the image
       const response = await fetch(`${import.meta.env.VITE_SAMURAI_API_BASE_URL}/images/generations`, {
         method: 'POST',
@@ -116,11 +127,17 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({
         }),
       });
 
+      console.log('Image generation response status:', response.status);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Image generation error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('Image generation response data:', data);
+      
       if (data && data.data && data.data[0] && data.data[0].url) {
         setImageUrl(data.data[0].url);
         if (onImageGenerated) {
@@ -131,13 +148,14 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({
           description: "Your dream image has been generated!",
         });
       } else {
+        console.error('Invalid response format:', data);
         throw new Error('Invalid response format from image generation API');
       }
     } catch (error: any) {
       console.error('Image generation error:', error);
       toast({
         title: "Error",
-        description: "Failed to generate image. Please try again.",
+        description: `Failed to generate image: ${error.message}`,
         variant: "destructive"
       });
       setImageUrl(null);
