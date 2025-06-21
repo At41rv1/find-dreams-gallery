@@ -72,25 +72,65 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({
               content: `You are a professional AI art prompt enhancer. Your job is to take simple prompts and transform them into extremely detailed, vivid, and artistic descriptions for AI image generation. 
 
 Create a comprehensive 50-line prompt that includes:
-- Detailed description of the main subject with specific features, expressions, and characteristics
-- Rich environmental details including lighting, atmosphere, and mood
-- Artistic style references (photography styles, art movements, camera techniques)
-- Color palette specifications with exact color names and tones
-- Composition details (angles, framing, perspective)
-- Quality and technical specifications (resolution, clarity, artistic quality)
-- Texture and material descriptions
-- Background elements and scenery details
-- Weather conditions or atmospheric effects if relevant
-- Professional photography or artistic rendering specifications
+1. Detailed description of the main subject with specific features, expressions, and characteristics
+2. Rich environmental details including lighting, atmosphere, and mood
+3. Artistic style references (photography styles, art movements, camera techniques)
+4. Color palette specifications with exact color names and tones
+5. Composition details (angles, framing, perspective)
+6. Quality and technical specifications (resolution, clarity, artistic quality)
+7. Texture and material descriptions
+8. Background elements and scenery details
+9. Weather conditions or atmospheric effects if relevant
+10. Professional photography or artistic rendering specifications
+11. Lighting setup and shadow details
+12. Camera settings and lens specifications
+13. Post-processing effects and filters
+14. Artistic movement inspirations
+15. Color temperature and saturation levels
+16. Depth of field specifications
+17. Motion blur or freeze effects
+18. Reflections and refractions
+19. Surface textures and materials
+20. Ambient occlusion and global illumination
+21. Subsurface scattering effects
+22. Volumetric lighting and fog
+23. Particle effects and atmospherics
+24. HDR and exposure settings
+25. Contrast and brightness levels
+26. Saturation and vibrance adjustments
+27. Sharpness and detail enhancement
+28. Noise reduction specifications
+29. Color grading and tone mapping
+30. Artistic interpretation style
+31. Emotional tone and mood descriptors
+32. Time of day and seasonal context
+33. Geographic and cultural elements
+34. Historical period accuracy
+35. Fashion and costume details
+36. Architectural elements and structures
+37. Natural elements and organic forms
+38. Geometric patterns and shapes
+39. Symmetry and asymmetry balance
+40. Scale and proportion relationships
+41. Foreground, midground, background layers
+42. Leading lines and visual flow
+43. Rule of thirds composition
+44. Golden ratio applications
+45. Visual weight distribution
+46. Negative space utilization
+47. Pattern repetition and variation
+48. Visual rhythm and movement
+49. Focal point emphasis techniques
+50. Overall aesthetic harmony and balance
 
-Make each line descriptive and specific. Focus on creating a prompt that will generate stunning, professional-quality images. Return only the enhanced prompt, nothing else.`
+Make each line descriptive and specific. Focus on creating a prompt that will generate stunning, professional-quality images. Return only the enhanced prompt as a single paragraph, nothing else.`
             },
             {
               role: "user",
               content: `Create an extremely detailed 50-line AI image generation prompt based on: "${originalPrompt}"`
             }
           ],
-          max_tokens: 800,
+          max_tokens: 1000,
           temperature: 0.7
         }),
       });
@@ -465,132 +505,6 @@ Make each line descriptive and specific. Focus on creating a prompt that will ge
       </Card>
     </div>
   );
-
-  async function saveImage() {
-    if (!imageUrl) {
-      toast({
-        title: "Error",
-        description: "No image to save.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to save images.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      // Upload image to Firebase Storage
-      const storageUrl = await uploadImageToStorage(imageUrl, user.uid);
-      
-      // Save image URL and prompt to Firestore
-      await saveGeneratedImage(storageUrl, enhancedPrompt || prompt, user.uid, user.email || 'anonymous');
-
-      toast({
-        title: "Success",
-        description: "Image saved successfully!",
-      });
-    } catch (error: any) {
-      console.error('Error saving image:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save image. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  function shareImage() {
-    if (!imageUrl) {
-      toast({
-        title: "Error",
-        description: "No image to share.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Use the navigator API to share the image URL
-    if (navigator.share) {
-      navigator.share({
-        title: 'Dream Image',
-        text: 'Check out this dream image I generated!',
-        url: imageUrl,
-      }).then(() => {
-        toast({
-          title: "Success",
-          description: "Image shared successfully!",
-        });
-      }).catch((error) => {
-        console.error('Error sharing image:', error);
-        toast({
-          title: "Error",
-          description: "Failed to share image.",
-          variant: "destructive"
-        });
-      });
-    } else {
-      // Fallback for browsers that don't support the share API
-      navigator.clipboard.writeText(imageUrl).then(() => {
-        toast({
-          title: "Copied!",
-          description: "Image URL copied to clipboard.",
-        });
-      }).catch((error) => {
-        console.error('Error copying to clipboard:', error);
-        toast({
-          title: "Error",
-          description: "Failed to copy image URL.",
-          variant: "destructive"
-        });
-      });
-    }
-  }
-
-  async function downloadImage() {
-    if (!imageUrl) {
-      toast({
-        title: "Error",
-        description: "No image to download.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `dream_image_${Date.now()}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
-      toast({
-        title: "Success",
-        description: "Image downloaded successfully!",
-      });
-    } catch (error) {
-      console.error('Error downloading image:', error);
-      toast({
-        title: "Error",
-        description: "Failed to download image.",
-        variant: "destructive"
-      });
-    }
-  }
 };
 
 export default ImageGeneration;
